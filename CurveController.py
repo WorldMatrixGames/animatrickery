@@ -90,10 +90,13 @@ def handle_currve_progression(scene, curve_data):
     predecessor_range = None
     successor_range = None
     index_active = -1
+    accumulated_eval_time = 0
+
     for range in frame_ranges:
         index_active += 1
 
         if range.end_frame < frame_current:
+            accumulated_eval_time += (range.end_frame - range.start_frame) * range.rate
             pass
         else:
             active_range = range
@@ -105,8 +108,9 @@ def handle_currve_progression(scene, curve_data):
     if not active_range:
         return
     
-    curve_data.eval_time = (frame_current - active_range.start_frame) * active_range.rate
-    print("eval_time set", curve_data.eval_time)
+    curve_data.eval_time = accumulated_eval_time + (frame_current - active_range.start_frame) * active_range.rate
+
+
 
 def curve_controller_animation_handler(scene):
     print("Number of the curves registered", len(scene.animatrickery_curves))
