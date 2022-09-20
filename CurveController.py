@@ -1,8 +1,6 @@
 import bpy;
 from animatrickery_core import FrameRangeSelector;
 
-bpy.types.Curve.animatrickery_frame_ranges = bpy.props.CollectionProperty(type=FrameRangeSelector)
-
 registered_curves_key = 'animatrickery_registered_curves'
 
 bl_info = {
@@ -10,6 +8,9 @@ bl_info = {
     "blender": (3, 0, 0),
     "category": "Animation",
 }
+
+class FrameRangeSelectorForCurveRateSelection(FrameRangeSelector):
+    rate: bpy.props.FloatProperty(name="Rate")
 
 class AnimatrickeryCurveDetails(bpy.types.PropertyGroup):
     curve_name: bpy.props.StringProperty()
@@ -24,11 +25,6 @@ class CurveController(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         active_object = context.active_object
-        if registered_curves_key not in context.scene:
-            row = layout.row()
-            row.label(text="Activate Curve Controller")
-            layout.row().operator('animatrickery.curve_controller_actions_manager').action = 'activate'
-            return
 
         if(active_object.type != 'CURVE'):
             row = layout.row()
@@ -45,34 +41,16 @@ class CurveController(bpy.types.Panel):
         curve = active_object.data
         for frame_range in curve.animatrickery_frame_ranges:
             row = layout.row()
+            column0 = row.column()
             column1 = row.column()
             column2 = row.column()
 
+            column0.prop(frame_range, "rate")
             column1.prop(frame_range, "start_frame")
             column2.prop(frame_range, "end_frame")
 
         row_add_range = layout.row()
         row_add_range.operator('animatrickery.add_frame_range')
-
-class CurveControllerActionsManager(bpy.types.Operator):
-    bl_idname = 'animatrickery.curve_controller_actions_manager'
-    bl_label = 'Curve Controller Actions Manager'
-    
-    action_enums = {
-        ('activate', "Activate", "Activate Curve Controller for this scene"),
-        ('deactivate', "Deactivate", "Deactivate Curve Controller for this scene")
-    }
-
-    action: bpy.props.EnumProperty(items=action_enums)
-
-    def execute(self, context):
-        if self.action == 'activate':
-            context.scene.animatrickery_curves.add()
-            return {'FINISHED'}
-        else:
-            return {'CANCELLED'}
-        
-        
 
 class AddRange(bpy.types.Operator):
     bl_idname = 'animatrickery.add_frame_range'
@@ -99,24 +77,67 @@ class RegisterCurveWithController(bpy.types.Operator):
 
         return {'FINISHED'}
 
+def handle_currve_progression(scene, curve_data):
+    
+    frame_ranges = curve_data.animatrickery_frame_ranges
+    init_frame = frame_ranges[0].start_frame
+    frame_current = scene.frame_current
+
+    if not len(curve_data.animatrickery_frame_ranges) or frame_current < init_frame:
+        return
+    
+    active_range = None
+    predecessor_range = None
+    successor_range = None
+    index_active = -1
+    for range in frame_ranges:
+        index_active += 1
+
+        if range.end_frame < frame_current:
+            pass
+        else:
+            active_range = range
+            if index_active < len(frame_ranges) - 2:
+                successor_range = frame_ranges[index_active + 1]
+                predecessor_range = frame_ranges[index_active - 1]
+            break
+    
+    if not active_range:
+        return
+    
+    curve_data.eval_time = (frame_current - active_range.start_frame) * active_range.rate
+    print("eval_time set", curve_data.eval_time)
+
 def curve_controller_animation_handler(scene):
-    pass
+    print("Number of the curves registered", len(scene.animatrickery_curves))
+    for curve_details in scene.animatrickery_curves:
+        print("Found", bpy.data.curves[curve_details.curve_name].name)
+        handle_currve_progression(scene, bpy.data.curves[curve_details.curve_name])
 
 def register():
+    bpy.utils.register_class(FrameRangeSelectorForCurveRateSelection)
     bpy.utils.register_class(AddRange)
     bpy.utils.register_class(AnimatrickeryCurveDetails)
     bpy.utils.register_class(RegisterCurveWithController)
-    bpy.utils.register_class(CurveControllerActionsManager)
     bpy.utils.register_class(CurveController)
     register_types()
+    register_handlers()
 
       
 def unregister():
+    unregister_handlers()
     bpy.utils.unregister_class(CurveController)
-    bpy.utils.unregister_class(CurveControllerActionsManager)
     bpy.utils.unregister_class(RegisterCurveWithController)
     bpy.utils.unregister_class(AnimatrickeryCurveDetails)
     bpy.utils.unregister_class(AddRange)
+    bpy.utils.unregister_class(FrameRangeSelectorForCurveRateSelection)
 
 def register_types():
+    bpy.types.Curve.animatrickery_frame_ranges = bpy.props.CollectionProperty(type=FrameRangeSelectorForCurveRateSelection)
     bpy.types.Scene.animatrickery_curves = bpy.props.CollectionProperty(type=AnimatrickeryCurveDetails)
+
+def register_handlers():
+    bpy.app.handlers.frame_change_pre.append(curve_controller_animation_handler)
+
+def unregister_handlers():
+    bpy.app.handlers.frame_change_pre.remove(curve_controller_animation_handler)
