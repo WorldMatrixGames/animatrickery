@@ -115,36 +115,35 @@ def handle_currve_progression(scene, curve_data):
     successor_range = None
     accumulated_eval_time = 0
     frame_range_len = len(frame_ranges)
-    accP = 0
-    accC = 0
+    
     for (idx, range) in enumerate(frame_ranges):
-        if range.end_frame < frame_current:
-            accumulated_eval_time += (range.end_frame - range.start_frame) * range.rate
+        if range.end_frame <= frame_current:
+            corrected_start_frame = max(range.start_frame, frame_ranges[idx - 1].end_frame) if idx > 0 else range.start_frame
+            accumulated_eval_time += (range.end_frame - corrected_start_frame) * range.rate
 
             if idx < frame_range_len - 1:
                 next_range = frame_ranges[idx + 1]
-                accumulated_eval_time += (range.end_frame - next_range.start_frame) * (next_range.rate - range.rate) / 2 
-            accP = accumulated_eval_time
+                if next_range.start_frame < range.end_frame:
+                    accumulated_eval_time += (range.end_frame - next_range.start_frame) * (next_range.rate - range.rate) / 2 
+            
         else:
             active_range = range
-            corrected_start_frame = max(active_range.start_frame, frame_ranges[idx - 1].end_frame)
+            corrected_start_frame = max(active_range.start_frame, frame_ranges[idx - 1].end_frame) if idx > 0 else active_range.start_frame
             accumulated_eval_time += (frame_current - corrected_start_frame) * active_range.rate
             
             if idx < frame_range_len - 1:
                 next_range = frame_ranges[idx + 1]
 
                 if next_range.start_frame <= frame_current:
-                    accumulated_eval_time += (frame_current - next_range.start_frame) * (next_range.rate - range.rate) * (frame_current - next_range.start_frame) / (2 * range.end_frame - next_range.start_frame)
-            accC = accumulated_eval_time
+                    accumulated_eval_time += (frame_current - next_range.start_frame) * (next_range.rate - range.rate) * (frame_current - next_range.start_frame) / (2 * (range.end_frame - next_range.start_frame))
             break
-    print(accP, accC, accumulated_eval_time)
+
     curve_data.eval_time = accumulated_eval_time
 
 
 
 def curve_controller_animation_handler(scene):
     for curve_details in scene.animatrickery_curves:
-        print("Found", bpy.data.curves[curve_details.curve_name].name)
         handle_currve_progression(scene, bpy.data.curves[curve_details.curve_name])
 
 def register():
