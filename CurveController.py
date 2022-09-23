@@ -90,15 +90,12 @@ class ToggleFrameChangeListeners(bpy.types.Operator):
 
     def execute(self, context):
         try:
-            if context.scene.animatrickery_frame_change_pre_handler_running:
+            idx = bpy.app.handlers.frame_change_pre.index(curve_controller_animation_handler)
+            if idx >= 0:
                 bpy.app.handlers.frame_change_pre.remove(curve_controller_animation_handler)
-        
-            else:
-                bpy.app.handlers.frame_change_pre.append(curve_controller_animation_handler)
         except:
-            pass
+            bpy.app.handlers.frame_change_pre.append(curve_controller_animation_handler)
 
-        context.scene.animatrickery_frame_change_pre_handler_running = not context.scene.animatrickery_frame_change_pre_handler_running
         return {'FINISHED'}
 
 def handle_currve_progression(scene, curve_data):
@@ -172,4 +169,3 @@ def unregister_classes():
 def register_types():
     bpy.types.Curve.animatrickery_frame_ranges = bpy.props.CollectionProperty(type=FrameRangeSelectorForCurveRateSelection)
     bpy.types.Scene.animatrickery_curves = bpy.props.CollectionProperty(type=AnimatrickeryCurveDetails)
-    bpy.types.Scene.animatrickery_frame_change_pre_handler_running = bpy.props.BoolProperty()
