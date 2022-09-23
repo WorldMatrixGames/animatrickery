@@ -44,28 +44,44 @@ class CurveController(bpy.types.Panel):
             return
 
         curve = active_object.data
-        for frame_range in curve.animatrickery_frame_ranges:
-            row = layout.row()
-            column0 = row.column()
-            column1 = row.column()
-            column2 = row.column()
+        for (idx, frame_range) in enumerate(curve.animatrickery_frame_ranges):
+            grid = layout.grid_flow(columns=2)
+            items_row = grid.row().split(factor=0.95)
+            data_column = items_row.grid_flow(columns=3)
+            remove_button_column = items_row.column()
+            
+            column0 = data_column.column()
+            column1 = data_column.column()
+            column2 = data_column.column()
 
             column0.prop(frame_range, "rate")
             column1.prop(frame_range, "start_frame")
             column2.prop(frame_range, "end_frame")
 
-        row_add_range = layout.row()
-        row_add_range.operator('animatrickery.add_frame_range')
+            remove_selection_details = remove_button_column.operator('animatrickery.manage_frame_ranges', text="--")
+            remove_selection_details.idx = idx
+            remove_selection_details.type = 'REMOVE'
 
-class AddRange(bpy.types.Operator):
-    bl_idname = 'animatrickery.add_frame_range'
-    bl_label = "Add Frame Range"
+        row_add_range = layout.row()
+        row_add_range.operator('animatrickery.manage_frame_ranges', text="Add Frame Range").type = 'ADD'
+        
+
+class ManageFrameRages(bpy.types.Operator):
+    bl_idname = 'animatrickery.manage_frame_ranges'
+    bl_label = "Manager Frame Range"
+    type: bpy.props.StringProperty()
+    idx: bpy.props.IntProperty()
 
     def execute(self, context):
         frame_current = context.scene.frame_current
         curve_active = context.active_object
         
-        curve_active.data.animatrickery_frame_ranges.add()
+        if self.type == 'ADD':
+            curve_active.data.animatrickery_frame_ranges.add()
+        elif self.type == 'REMOVE':
+            curve_active.data.animatrickery_frame_ranges.remove(self.idx)
+        else:
+            return {'CANCELLED'}
 
         return {'FINISHED'}
 
@@ -99,7 +115,9 @@ class ToggleFrameChangeListeners(bpy.types.Operator):
         return {'FINISHED'}
 
 def handle_currve_progression(scene, curve_data):
-    
+    if(not len(curve_data.animatrickery_frame_ranges)):
+        return
+
     frame_ranges = curve_data.animatrickery_frame_ranges
     init_frame = frame_ranges[0].start_frame
     frame_current = scene.frame_current
@@ -140,8 +158,16 @@ def handle_currve_progression(scene, curve_data):
 
 
 def curve_controller_animation_handler(scene):
-    for curve_details in scene.animatrickery_curves:
-        handle_currve_progression(scene, bpy.data.curves[curve_details.curve_name])
+    deleted_curves = []
+    for (idx, curve_details) in enumerate(scene.animatrickery_curves):
+        try:
+            curve = bpy.data.curves[curve_details.curve_name]
+            handle_currve_progression(scene, bpy.data.curves[curve_details.curve_name])
+        except: 
+            deleted_curves.append(idx)
+    
+    for idx in deleted_curves:
+        scene.animatrickery_curves.remove(idx)
 
 def register():
     register_classes()
@@ -152,7 +178,7 @@ def unregister():
 
 def register_classes():
     bpy.utils.register_class(FrameRangeSelectorForCurveRateSelection)
-    bpy.utils.register_class(AddRange)
+    bpy.utils.register_class(ManageFrameRages)
     bpy.utils.register_class(AnimatrickeryCurveDetails)
     bpy.utils.register_class(RegisterCurveWithController)
     bpy.utils.register_class(CurveController)
@@ -163,7 +189,7 @@ def unregister_classes():
     bpy.utils.unregister_class(CurveController)
     bpy.utils.unregister_class(RegisterCurveWithController)
     bpy.utils.unregister_class(AnimatrickeryCurveDetails)
-    bpy.utils.unregister_class(AddRange)
+    bpy.utils.unregister_class(ManageFrameRages)
     bpy.utils.unregister_class(FrameRangeSelectorForCurveRateSelection)
 
 def register_types():
