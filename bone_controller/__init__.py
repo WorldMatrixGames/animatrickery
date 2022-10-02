@@ -22,16 +22,19 @@ def register():
     bpy.types.Scene.animatrickery_bone_controller_record = bpy.props.BoolProperty()
     bpy.types.Scene.animatrickery_bone_controller_start_frame = bpy.props.IntProperty()
     bpy.types.Scene.animatrickery_bone_controller_stop_frame = bpy.props.IntProperty()
+    bpy.types.PoseBone.animatrickery_bone_controller_frame_offset = bpy.props.IntProperty()
     bpy.utils.register_class(bone_controller_types.FrameRangeSelectionForBoneRotation)
     bpy.utils.register_class(bone_controller_types.AnimatrickeryBoneRegistrationDetails)
     bpy.types.Scene.animatrickery_registered_pose_bones = bpy.props.CollectionProperty(type=bone_controller_types.AnimatrickeryBoneRegistrationDetails)
     bpy.utils.register_class(bone_controller_ui.ManageBoneRotationSettings)
     bpy.types.PoseBone.animatrickery_rotation_settings = bpy.props.CollectionProperty(type=bone_controller_types.FrameRangeSelectionForBoneRotation)
     bpy.utils.register_class(bone_controller_ui.BoneControllerPanel)
+    bpy.utils.register_class(bone_controller_ui.CopyRotationSettings)
 
     print("Bone controller module registered")
 
 def unregister():
+    bpy.utils.unregister_class(bone_controller_ui.CopyRotationSettings)
     bpy.utils.unregister_class(bone_controller_ui.BoneControllerPanel)
     bpy.utils.unregister_class(bone_controller_ui.ManageBoneRotationSettings)
     bpy.utils.unregister_class(bone_controller_types.AnimatrickeryBoneRegistrationDetails)

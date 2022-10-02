@@ -9,9 +9,6 @@ def animatrickery_bone_rotator(scene):
     for registration in scene.animatrickery_registered_pose_bones:
         pose_bone = bpy.context.object.pose.bones[registration.name]
         
-        if frame_current == scene.animatrickery_bone_controller_start_frame:
-            bpy.ops.pose.rot_clear()
-            
         if not len(pose_bone.animatrickery_rotation_settings):
             continue
 
@@ -20,10 +17,19 @@ def animatrickery_bone_rotator(scene):
                 break
 
             if  frame_current >= rotation_setting.frame and  frame_current <= pose_bone.animatrickery_rotation_settings[idx+1].frame:
+                frame_range = scene.animatrickery_bone_controller_stop_frame - scene.animatrickery_bone_controller_start_frame
+                
                 start_rotation = rotation_setting.rotation
-                start_frame = rotation_setting.frame
                 end_rotation = pose_bone.animatrickery_rotation_settings[idx+1].rotation
-                end_frame = pose_bone.animatrickery_rotation_settings[idx+1].frame
+                
+                start_frame_with_offset = rotation_setting.frame + pose_bone.animatrickery_bone_controller_frame_offset
+                end_frame_with_offset = pose_bone.animatrickery_rotation_settings[idx+1].frame + pose_bone.animatrickery_bone_controller_frame_offset
+
+                start_frame =  start_frame_with_offset if pose_bone.animatrickery_bone_controller_frame_offset == 0 else start_frame_with_offset % pose_bone.animatrickery_bone_controller_frame_offset
+                end_frame = end_frame_with_offset if pose_bone.animatrickery_bone_controller_frame_offset == 0 else (end_frame_with_offset) % (frame_range)
+                
+                # Pure calculation to reduce complexity
+                pose_bone.matrix_basis = Matrix.Identity(4)
 
                 start_mat_rot_x = Matrix.Rotation(start_rotation[0] * pi / 180, 4, 'X')
                 start_mat_rot_y = Matrix.Rotation(start_rotation[1] * pi / 180, 4, 'Y')
@@ -33,8 +39,14 @@ def animatrickery_bone_rotator(scene):
                 end_mat_rot_y = Matrix.Rotation(end_rotation[1] * pi / 180, 4, 'Y')
                 end_mat_rot_z = Matrix.Rotation(end_rotation[2] * pi / 180, 4, 'Z')
 
-                start = start_mat_rot_x @ start_mat_rot_y @ start_mat_rot_z
-                end = end_mat_rot_x @ end_mat_rot_y @ end_mat_rot_z
+                start = start_mat_rot_x @ pose_bone.matrix_basis
+                start = start_mat_rot_y @ start
+                start = start_mat_rot_z @ start
+
+                end = end_mat_rot_x @ pose_bone.matrix_basis
+                end = end_mat_rot_y @ end
+                end = end_mat_rot_z @ end
+
 
                 new_rot = start.lerp(end, (frame_current - start_frame) / (end_frame - start_frame))
 

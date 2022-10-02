@@ -46,6 +46,9 @@ class BoneControllerPanel(bpy.types.Panel):
         data_column = data_grid.column()
         op_column = data_grid.column()
 
+        offset_row = layout.row()
+        offset_row.column().label(text="Offset")
+        offset_row.column().prop(active_pose_bone, 'animatrickery_bone_controller_frame_offset')
         info_row = layout.row().split(factor=.9)
         info_row.column().label(text="No. of items " + str(len(active_pose_bone.animatrickery_rotation_settings)))
         op_add_props = info_row.column().operator('animatrickery.manage_bone_rotaion_settings', text="+")
@@ -117,6 +120,27 @@ class ManageBoneRotationSettings(bpy.types.Operator):
             context.scene.animatrickery_registered_pose_bones[-1].name = self.bone_name
             
         return {'FINISHED'}
+
+class CopyRotationSettings(bpy.types.Operator):
+    bl_idname = 'animatrickery.copy_bone_rotation_settings'
+    bl_label = "Copy Bone Rotation Settings"
+
+    def execute(self, context):
+        if(len(context.selected_pose_bones) < 2):
+            return {'CANCELLED'}
+
+        for bone in context.selected_pose_bones[1:]:
+            bpy.ops.animatrickery.manage_bone_rotaion_settings(action='REGISTER', bone_name=bone.name)
+            print("Registered(Copy)::" + bone.name)
+            for setting in context.active_pose_bone.animatrickery_rotation_settings:
+                print("Copying::" + str(setting.frame))
+                bone.animatrickery_rotation_settings.add()
+                bone.animatrickery_rotation_settings[-1].frame = setting.frame
+                bone.animatrickery_rotation_settings[-1].rotation = setting.rotation
+
+        return {'FINISHED'}
+
+
 
 def toggle_bone_controller_listener(switch):
     if switch:
