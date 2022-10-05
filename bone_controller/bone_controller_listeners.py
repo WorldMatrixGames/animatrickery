@@ -22,11 +22,8 @@ def animatrickery_bone_rotator(scene):
                 start_rotation = rotation_setting.rotation
                 end_rotation = pose_bone.animatrickery_rotation_settings[idx+1].rotation
                 
-                start_frame_with_offset = rotation_setting.frame + pose_bone.animatrickery_bone_controller_frame_offset
-                end_frame_with_offset = pose_bone.animatrickery_rotation_settings[idx+1].frame + pose_bone.animatrickery_bone_controller_frame_offset
-
-                start_frame =  start_frame_with_offset if pose_bone.animatrickery_bone_controller_frame_offset == 0 else start_frame_with_offset % pose_bone.animatrickery_bone_controller_frame_offset
-                end_frame = end_frame_with_offset if pose_bone.animatrickery_bone_controller_frame_offset == 0 else (end_frame_with_offset) % (frame_range)
+                start_frame =  rotation_setting.frame
+                end_frame = pose_bone.animatrickery_rotation_settings[idx+1].frame
                 
                 # Pure calculation to reduce complexity
                 pose_bone.matrix_basis = Matrix.Identity(4)

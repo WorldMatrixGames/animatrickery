@@ -166,8 +166,7 @@ def curve_controller_animation_handler(scene):
         except: 
             deleted_curves.append(idx)
     
-    for idx in deleted_curves:
-        scene.animatrickery_curves.remove(idx)
+    
 
 def register():
     register_classes()
