@@ -192,9 +192,9 @@ class CopyRotationSettings(bpy.types.Operator):
                 rotation_end = setting_wrap_around[0]['rotation']
                 rotation_start = setting_wrap_around[-1]['rotation']
                 rotation_first_split = Euler((
-                    (rotation_end[0] + rotation_start[0]) * (1-split_fraction),
-                    (rotation_end[1] + rotation_start[1]) * (1-split_fraction),
-                    (rotation_end[2] + rotation_start[2]) * (1-split_fraction)
+                    rotation_start[0] + ((rotation_end[0] - rotation_start[0]) * (split_fraction)),
+                    rotation_start[1] + ((rotation_end[1] - rotation_start[1]) * (split_fraction)),
+                    rotation_start[2] + ((rotation_end[2] - rotation_start[2]) * (split_fraction))
                 ))
                 bone.animatrickery_rotation_settings[-1].rotation = rotation_first_split
                 bone.animatrickery_rotation_settings[0].rotation = rotation_first_split
