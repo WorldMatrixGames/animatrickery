@@ -51,7 +51,7 @@ def animatrickery_bone_rotator(scene):
 
                 if scene.animatrickery_bone_controller_record:
                     for selected_pose_bone in bpy.context.selected_pose_bones:
-                        selected_pose_bone.keyframe_insert('rotation_euler', frame=frame_current)
+                        selected_pose_bone.keyframe_insert('rotation_quaternion', frame=frame_current)
                         selected_pose_bone.keyframe_insert('location', frame=frame_current)
 
                     if scene.animatrickery_bone_controller_record and frame_current == scene.animatrickery_bone_controller_stop_frame:
