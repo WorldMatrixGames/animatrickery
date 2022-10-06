@@ -53,7 +53,7 @@ class BoneControllerPanel(bpy.types.Panel):
 
         offset_row = layout.row()
         offset_row.column().label(text="Offset")
-        offset_row.column().prop(active_pose_bone, 'animatrickery_bone_controller_frame_offset')
+        offset_row.column().prop(active_pose_bone, 'animatrickery_bone_controller_frame_offset', text="Offset for Copy")
         offset_row.column().operator('animatrickery.copy_bone_rotation_settings').offset = active_pose_bone.animatrickery_bone_controller_frame_offset
         info_row = layout.row().split(factor=.9)
         info_row.column().label(text="No. of items " +
@@ -160,8 +160,12 @@ class CopyRotationSettings(bpy.types.Operator):
             bone.animatrickery_rotation_settings.clear()
 
             if self.offset == 0:
-                bone.animatrickery_rotation_settings = [
-                    setting for setting in active_pose_bone.animatrickery_rotation_settings]
+                bone.animatrickery_rotation_settings.clear()
+                for setting in active_pose_bone.animatrickery_rotation_settings:
+                    bone.animatrickery_rotation_settings.add()
+                    bone.animatrickery_rotation_settings[-1].frame = setting['frame']
+                    bone.animatrickery_rotation_settings[-1].rotation = setting['rotation']
+
             else:
                 start_frame = context.scene.animatrickery_bone_controller_start_frame
                 end_frame = context.scene.animatrickery_bone_controller_stop_frame
