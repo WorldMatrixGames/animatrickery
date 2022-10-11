@@ -1,4 +1,4 @@
-# animatrickery
+# ANIMATRICKERY
 Assorted Blender helper addons for animation
 
 
